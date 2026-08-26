@@ -19,8 +19,8 @@ def show():
         
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Throughput", total_parts)
-        col2.metric("Line OEE (Avg Cycle)", f"{round(avg_cycle, 2)} min")
-        col3.metric("Bottlenecks Flagged", int(rework_risks))
+        col2.metric("Average Cycle Time", f"{round(avg_cycle, 2)} min")
+        col3.metric("Predicted Bottlenecks", int(rework_risks))
         
         st.subheader("Historical Bottleneck Analysis")
         trend = alt.Chart(df).mark_line(opacity=0.3).encode(
@@ -35,7 +35,7 @@ def show():
         st.dataframe(coverage)
         
         savings = int(rework_risks * 1500)
-        st.info(f"Financial Impact: Flagging {int(rework_risks)} bottleneck risks early helps mitigate an estimated ${savings} in downstream rework costs.")
+        st.info(f"Financial Impact: Flagging {int(rework_risks)} at-risk events early helps mitigate an estimated ${savings} in downstream rework costs.")
         
     except Exception as e:
         st.error(f"Error loading UI: {e}")

@@ -6,13 +6,18 @@ DATA_DIR = ROOT_DIR / "output_data"
 
 def infer_data(df):
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-    df = df.sort_values(['Part_ID', 'Timestamp']).reset_index(drop=True)
-    df['Inferred_Time'] = df['Cycle_Time']
+    # Sort chronologically by the physical part moving down the line
+    df = df.sort_values(['Part_ID', 'Station_Num']).reset_index(drop=True)
     
-    for i in range(1, len(df)):
-        if pd.isna(df.loc[i, 'Cycle_Time']):
-            diff = (df.loc[i, 'Timestamp'] - df.loc[i-1, 'Timestamp']).total_seconds() / 60.0
-            df.loc[i, 'Inferred_Time'] = round(diff, 2)
+    # Calculate explicit upstream buffer delta for the SAME part
+    df['Upstream_Departure_Time'] = df.groupby('Part_ID')['Timestamp'].shift(1)
+    
+    df['Inferred_Time'] = df['Cycle_Time']
+    missing_mask = df['Inferred_Time'].isna()
+    
+    # Fill dark stations using the buffer transit delta
+    inferred_deltas = (df.loc[missing_mask, 'Timestamp'] - df.loc[missing_mask, 'Upstream_Departure_Time']).dt.total_seconds() / 60.0
+    df.loc[missing_mask, 'Inferred_Time'] = inferred_deltas.round(2)
             
     df['Rolling_Avg'] = df.groupby('Station_ID')['Inferred_Time'].transform(lambda x: x.rolling(5, min_periods=1).mean())
     

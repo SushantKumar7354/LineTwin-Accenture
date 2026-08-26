@@ -1,42 +1,62 @@
+import streamlit as st
 import pandas as pd
-import random
-from datetime import datetime, timedelta
+import networkx as nx
+import matplotlib.pyplot as plt
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 DATA_DIR = ROOT_DIR / "output_data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-def generate_baseline(num_stations=35, num_parts=200):
-    random.seed(42)
-    simulation_results = []
-    start_time = datetime(2026, 9, 1, 8, 0, 0)
+def show():
+    st.header("Real-Time Operations")
     
-    for part_index in range(1, num_parts + 1):
-        current_time = start_time + timedelta(minutes=part_index * 2)
-        for station_index in range(1, num_stations + 1):
-            cycle_time = 2.0 + random.gauss(0, 0.1)
-            current_time += timedelta(minutes=cycle_time)
-            
-            is_legacy = (10 <= station_index <= 15) or (25 <= station_index <= 30)
-            recorded_time = None if is_legacy else round(cycle_time, 2)
-            coverage_type = "Dark" if is_legacy else "Instrumented"
-            
-            simulation_results.append({
-                "Part_ID": part_index,
-                "Station_ID": f"ST-{station_index}",
-                "Timestamp": current_time,
-                "Cycle_Time": recorded_time,
-                "Coverage": coverage_type
-            })
-            
-    return pd.DataFrame(simulation_results)
-
-if __name__ == "__main__":
     try:
-        df_baseline = generate_baseline()
-        out_path = DATA_DIR / "baseline.csv"
-        df_baseline.to_csv(out_path, index=False)
-        print(f"Generated {out_path}")
+        in_path = DATA_DIR / "predictions.csv"
+        df = pd.read_csv(in_path)
+        
+        latest_part = df['Part_ID'].max()
+        curr_state = df[df['Part_ID'] == latest_part]
+        risks = curr_state[curr_state['Risk_Score'] == 1]
+        
+        if not risks.empty:
+            st.error("ACTION REQUIRED: Downstream Ripple Detected")
+            for _, row in risks.iterrows():
+                # Dynamic Prescription Logic
+                drift_severity = ((row['Predicted_Time'] - row['Rolling_Avg']) / row['Rolling_Avg']) * 100
+                recommended_throttle = min(15, max(2, int(drift_severity * 0.5)))
+                
+                st.warning(f"Rule-Based Recommendation: Throttle {row['Station_ID']} speed by {recommended_throttle}%. Predicted cycle {row['Predicted_Time']}m exceeds normal {round(row['Rolling_Avg'], 2)}m.")
+        else:
+            st.success("Line running optimally.")
+        
+        st.markdown("---")
+        st.subheader("Live Assembly Line Topology (Spatiotemporal Graph)")
+        
+        stations = curr_state['Station_ID'].tolist()
+        G = nx.DiGraph()
+        for i in range(len(stations)-1):
+            G.add_edge(stations[i], stations[i+1])
+            
+        pos = {}
+        for i, station in enumerate(stations):
+            row = i // 10
+            col = i % 10 if row % 2 == 0 else 9 - (i % 10) 
+            pos[station] = (col, -row)
+            
+        risk_stations = risks['Station_ID'].tolist()
+        node_colors = ['#ff4b4b' if node in risk_stations else '#28a745' for node in G.nodes()]
+        
+        fig, ax = plt.subplots(figsize=(14, 5))
+        nx.draw(G, pos, with_labels=True, node_color=node_colors, 
+                node_size=800, font_size=8, font_color="white", 
+                font_weight="bold", edge_color="gray", ax=ax, arrows=True)
+        
+        ax.set_title("Red nodes indicate T+15m bottleneck prediction", fontsize=12, color="gray")
+        st.pyplot(fig)
+        
+        st.markdown("---")
+        st.subheader("Station Telemetry")
+        st.dataframe(curr_state[['Station_ID', 'Coverage', 'Inferred_Time', 'Predicted_Time', 'Risk_Score']].reset_index(drop=True), use_container_width=True)
+            
     except Exception as e:
-        print(f"Error in simulator.py: {e}")
+        st.error(f"Error loading UI: {e}")

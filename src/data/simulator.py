@@ -7,36 +7,46 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = ROOT_DIR / "output_data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-def get_base(n=35, parts=200):
+def generate_baseline(num_stations=35, num_parts=200):
     random.seed(42)
-    res = []
-    st = datetime(2026, 9, 1, 8, 0, 0)
+    simulation_results = []
+    start_time = datetime(2026, 9, 1, 8, 0, 0)
     
-    for i in range(1, parts + 1):
-        cur = st + timedelta(minutes=i * 2)
-        for j in range(1, n + 1):
-            cyc = 2.0 + random.gauss(0, 0.1)
-            cur += timedelta(minutes=cyc)
+    for part_index in range(1, num_parts + 1):
+        current_time = start_time + timedelta(minutes=part_index * 2)
+        for station_index in range(1, num_stations + 1):
             
-            legacy = (10 <= j <= 15) or (25 <= j <= 30)
-            c_time = None if legacy else round(cyc, 2)
-            cov = "Dark" if legacy else "Instrumented"
+            # Add realistic physical variations based on factory zones
+            if station_index <= 12:
+                base_cycle = 2.0 # Body Shop
+            elif station_index <= 24:
+                base_cycle = 4.5 # Paint Shop
+            else:
+                base_cycle = 3.0 # Final Assembly
+                
+            cycle_time = base_cycle + random.gauss(0, base_cycle * 0.05)
+            current_time += timedelta(minutes=cycle_time)
             
-            res.append({
-                "Part_ID": i,
-                "Station_ID": f"ST-{j}",
-                "Timestamp": cur,
-                "Cycle_Time": c_time,
-                "Coverage": cov
+            is_legacy = (10 <= station_index <= 15) or (25 <= station_index <= 30)
+            recorded_time = None if is_legacy else round(cycle_time, 2)
+            coverage_type = "Dark" if is_legacy else "Instrumented"
+            
+            simulation_results.append({
+                "Part_ID": part_index,
+                "Station_Num": station_index, # Added integer for easier sorting
+                "Station_ID": f"ST-{station_index}",
+                "Timestamp": current_time,
+                "Cycle_Time": recorded_time,
+                "Coverage": coverage_type
             })
             
-    return pd.DataFrame(res)
+    return pd.DataFrame(simulation_results)
 
 if __name__ == "__main__":
     try:
-        df = get_base()
+        df_baseline = generate_baseline()
         out_path = DATA_DIR / "baseline.csv"
-        df.to_csv(out_path, index=False)
+        df_baseline.to_csv(out_path, index=False)
         print(f"Generated {out_path}")
     except Exception as e:
         print(f"Error in simulator.py: {e}")
