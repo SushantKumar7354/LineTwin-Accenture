@@ -1,33 +1,39 @@
 import pandas as pd
-import random
-from datetime import datetime, timedelta
+import networkx as nx
+from sklearn.ensemble import GradientBoostingRegressor
+import numpy as np
+import warnings
+warnings.filterwarnings('ignore')
 
-def get_base(n=35, parts=200):
-    random.seed(42)
-    res = []
-    st = datetime(2026, 9, 1, 8, 0, 0)
+def build_graph(stations):
+    G = nx.DiGraph()
+    for i in range(len(stations)-1):
+        G.add_edge(stations[i], stations[i+1])
+    return G
+
+def run_pred(df):
+    stations = df['Station_ID'].unique()
+    G = build_graph(stations)
     
-    for i in range(1, parts + 1):
-        cur = st + timedelta(minutes=i * 2)
-        for j in range(1, n + 1):
-            cyc = 2.0 + random.gauss(0, 0.1)
-            cur += timedelta(minutes=cyc)
-            
-            legacy = (10 <= j <= 15) or (25 <= j <= 30)
-            c_time = None if legacy else round(cyc, 2)
-            cov = "Dark" if legacy else "Instrumented"
-            
-            res.append({
-                "Part_ID": i,
-                "Station_ID": f"ST-{j}",
-                "Timestamp": cur,
-                "Cycle_Time": c_time,
-                "Coverage": cov
-            })
-            
-    return pd.DataFrame(res)
+    df['Target_Time'] = df.groupby('Station_ID')['Inferred_Time'].shift(-5)
+    df = df.bfill().ffill()
+    
+    features = ['Part_ID', 'Inferred_Time', 'Rolling_Avg']
+    X = df[features]
+    y = df['Target_Time']
+    
+    model = GradientBoostingRegressor(n_estimators=50, random_state=42)
+    model.fit(X, y)
+    
+    df['Predicted_Time'] = np.round(model.predict(X), 2)
+    df['Risk_Score'] = np.where(df['Predicted_Time'] > (df['Rolling_Avg'] * 1.3), 1, 0)
+    
+    return df, G
 
 if __name__ == "__main__":
-    df = get_base()
-    df.to_csv("baseline.csv", index=False)
-    
+    try:
+        df = pd.read_csv("inferred.csv")
+        df, G = run_pred(df)
+        df.to_csv("predictions.csv", index=False)
+    except Exception as e:
+        pass
