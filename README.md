@@ -6,7 +6,7 @@
 ## Overview
 LineTwin is a spatiotemporal digital twin designed to predict and prevent assembly line bottlenecks in mixed modern/legacy manufacturing environments. It uses soft-sensor inference to fill "dark data" gaps and a graph-based ML engine to issue prescriptive alerts.
 
-🎬 **[Watch our 3-Minute Demo Video Here] (Insert YouTube/Drive Link)**
+🎬 **[Watch our 3-Minute Demo Video Here] ()**
 
 ## Architecture
 1. **Simulation Engine (`src/data/`)**: Generates realistic 35-station telemetry and injects multi-causal bottlenecks.
