@@ -51,7 +51,7 @@ def show():
                 node_size=800, font_size=8, font_color="white", 
                 font_weight="bold", edge_color="gray", ax=ax, arrows=True)
         
-        ax.set_title("Red nodes indicate T+15m bottleneck prediction", fontsize=12, color="gray")
+        ax.set_title("Red nodes indicate bottleneck predictions for the next 5 units", fontsize=12, color="gray")
         st.pyplot(fig)
         
         st.markdown("---")
