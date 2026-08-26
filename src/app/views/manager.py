@@ -1,12 +1,17 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+DATA_DIR = ROOT_DIR / "output_data"
 
 def show():
     st.header("Plant Manager & ROI Dashboard")
     
     try:
-        df = pd.read_csv("predictions.csv")
+        in_path = DATA_DIR / "predictions.csv"
+        df = pd.read_csv(in_path)
         
         total_parts = df['Part_ID'].nunique()
         avg_cycle = df['Inferred_Time'].mean()
@@ -15,7 +20,7 @@ def show():
         col1, col2, col3 = st.columns(3)
         col1.metric("Total Throughput", total_parts)
         col2.metric("Line OEE (Avg Cycle)", f"{round(avg_cycle, 2)} min")
-        col3.metric("Prevented Bottlenecks", int(rework_risks))
+        col3.metric("Bottlenecks Flagged", int(rework_risks))
         
         st.subheader("Historical Bottleneck Analysis")
         trend = alt.Chart(df).mark_line(opacity=0.3).encode(
@@ -30,7 +35,7 @@ def show():
         st.dataframe(coverage)
         
         savings = int(rework_risks * 1500)
-        st.info(f"Financial Impact: Preventing {int(rework_risks)} bottlenecks saves an estimated ${savings} in downstream rework costs.")
+        st.info(f"Financial Impact: Flagging {int(rework_risks)} bottleneck risks early helps mitigate an estimated ${savings} in downstream rework costs.")
         
-    except:
-        st.write("run data pipeline first")
+    except Exception as e:
+        st.error(f"Error loading UI: {e}")

@@ -1,4 +1,8 @@
 import pandas as pd
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = ROOT_DIR / "output_data"
 
 def infer_data(df):
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
@@ -16,8 +20,11 @@ def infer_data(df):
 
 if __name__ == "__main__":
     try:
-        df = pd.read_csv("anomalous.csv")
+        in_path = DATA_DIR / "anomalous.csv"
+        df = pd.read_csv(in_path)
         df = infer_data(df)
-        df.to_csv("inferred.csv", index=False)
+        out_path = DATA_DIR / "inferred.csv"
+        df.to_csv(out_path, index=False)
+        print(f"Generated {out_path}")
     except Exception as e:
-        pass
+        print(f"Error in soft_sensor.py: {e}")

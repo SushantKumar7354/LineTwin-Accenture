@@ -1,6 +1,11 @@
 import pandas as pd
 import random
 from datetime import datetime, timedelta
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = ROOT_DIR / "output_data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_base(n=35, parts=200):
     random.seed(42)
@@ -28,5 +33,10 @@ def get_base(n=35, parts=200):
     return pd.DataFrame(res)
 
 if __name__ == "__main__":
-    df = get_base()
-    df.to_csv("baseline.csv", index=False)
+    try:
+        df = get_base()
+        out_path = DATA_DIR / "baseline.csv"
+        df.to_csv(out_path, index=False)
+        print(f"Generated {out_path}")
+    except Exception as e:
+        print(f"Error in simulator.py: {e}")
