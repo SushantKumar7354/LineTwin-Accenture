@@ -1,62 +1,72 @@
+"""Floor Supervisor — real-time operations view.
+
+Leads with prescriptive alerts, then the same conveyor strip filtered
+to the current moment, then a station-by-station detail table that
+distinguishes live readings from soft-sensor inferred ones.
+"""
 import streamlit as st
-import pandas as pd
-import networkx as nx
-import matplotlib.pyplot as plt
-from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-DATA_DIR = ROOT_DIR / "output_data"
+from src.app.utils import latest_snapshot
+from src.app import components
 
-def show():
-    st.header("Real-Time Operations")
-    
-    try:
-        in_path = DATA_DIR / "predictions.csv"
-        df = pd.read_csv(in_path)
-        
-        latest_part = df['Part_ID'].max()
-        curr_state = df[df['Part_ID'] == latest_part]
-        risks = curr_state[curr_state['Risk_Score'] == 1]
-        
-        if not risks.empty:
-            st.error("ACTION REQUIRED: Downstream Ripple Detected")
-            for _, row in risks.iterrows():
-                # Dynamic Prescription Logic
-                drift_severity = ((row['Predicted_Time'] - row['Rolling_Avg']) / row['Rolling_Avg']) * 100
-                recommended_throttle = min(15, max(2, int(drift_severity * 0.5)))
-                
-                st.warning(f"Rule-Based Recommendation: Throttle {row['Station_ID']} speed by {recommended_throttle}%. Predicted cycle {row['Predicted_Time']}m exceeds normal {round(row['Rolling_Avg'], 2)}m.")
-        else:
-            st.success("Line running optimally.")
-        
-        st.markdown("---")
-        st.subheader("Live Assembly Line Topology (Spatiotemporal Graph)")
-        
-        stations = curr_state['Station_ID'].tolist()
-        G = nx.DiGraph()
-        for i in range(len(stations)-1):
-            G.add_edge(stations[i], stations[i+1])
-            
-        pos = {}
-        for i, station in enumerate(stations):
-            row = i // 10
-            col = i % 10 if row % 2 == 0 else 9 - (i % 10) 
-            pos[station] = (col, -row)
-            
-        risk_stations = risks['Station_ID'].tolist()
-        node_colors = ['#ff4b4b' if node in risk_stations else '#28a745' for node in G.nodes()]
-        
-        fig, ax = plt.subplots(figsize=(14, 5))
-        nx.draw(G, pos, with_labels=True, node_color=node_colors, 
-                node_size=800, font_size=8, font_color="white", 
-                font_weight="bold", edge_color="gray", ax=ax, arrows=True)
-        
-        ax.set_title("Red nodes indicate bottleneck predictions for the next 5 units", fontsize=12, color="gray")
-        st.pyplot(fig)
-        
-        st.markdown("---")
-        st.subheader("Station Telemetry")
-        st.dataframe(curr_state[['Station_ID', 'Coverage', 'Inferred_Time', 'Predicted_Time', 'Risk_Score']].reset_index(drop=True), use_container_width=True)
-            
-    except Exception as e:
-        st.error(f"Error loading UI: {e}")
+
+def show(df):
+    st.markdown("### Floor Supervisor — Real-Time Operations")
+    st.caption("Current line state and recommended actions for active risks.")
+
+    snap = latest_snapshot(df)
+    risks = snap[snap["Risk_Score"] == 1]
+
+    if not risks.empty:
+        for _, row in risks.iterrows():
+            predicted = row.get("Predicted_Time")
+            rolling = row.get("Rolling_Avg")
+            predicted_txt = f"{predicted:.2f}m" if predicted is not None else "–"
+            rolling_txt = f"{rolling:.2f}m" if rolling is not None else "–"
+            st.markdown(
+                f"""
+                <div class="lt-alert">
+                    <div class="lt-alert-title">Action required &mdash; {row['Station_ID']}</div>
+                    <div class="lt-presc">
+                        Throttle {row['Station_ID']} speed by 5%. Predicted cycle time
+                        {predicted_txt} exceeds its rolling average of {rolling_txt}.
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    else:
+        st.markdown(
+            '<div class="lt-ok">&check; Line running optimally &mdash; no interventions '
+            "needed right now.</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.write("")
+    components.render_conveyor(snap)
+    components.render_legend()
+
+    st.write("")
+    st.markdown("#### Station Detail")
+
+    detail = snap[
+        ["Station_ID", "Coverage", "Inferred_Time", "Predicted_Time", "Risk_Score"]
+    ].reset_index(drop=True)
+    detail["Source"] = detail["Coverage"].map(
+        {"Instrumented": "Live", "Dark": "Inferred"}
+    )
+    detail["Status"] = detail["Risk_Score"].map({1: "At risk", 0: "Normal"})
+    detail = detail.rename(
+        columns={
+            "Station_ID": "Station",
+            "Inferred_Time": "Cycle time (min)",
+            "Predicted_Time": "Predicted next (min)",
+        }
+    ).drop(columns=["Coverage", "Risk_Score"])
+
+    st.markdown(
+        '<div class="lt-detail-table">'
+        + detail.to_html(index=False, border=0, classes="lt-detail-table", float_format="{:.2f}".format)
+        + '</div>',
+        unsafe_allow_html=True,
+    )

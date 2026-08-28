@@ -1,41 +1,111 @@
+"""Plant Manager — ROI dashboard.
+
+Executive-facing: throughput, OEE-proxy cycle time, bottlenecks
+prevented, sensor coverage, and the financial-impact case.
+"""
 import streamlit as st
-import pandas as pd
-import altair as alt
-from pathlib import Path
 
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
-DATA_DIR = ROOT_DIR / "output_data"
+from src.app import components
 
-def show():
-    st.header("Plant Manager & ROI Dashboard")
-    
-    try:
-        in_path = DATA_DIR / "predictions.csv"
-        df = pd.read_csv(in_path)
-        
-        total_parts = df['Part_ID'].nunique()
-        avg_cycle = df['Inferred_Time'].mean()
-        rework_risks = df['Risk_Score'].sum()
-        
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total Throughput", total_parts)
-        col2.metric("Average Cycle Time", f"{round(avg_cycle, 2)} min")
-        col3.metric("Predicted Bottlenecks", int(rework_risks))
-        
-        st.subheader("Historical Bottleneck Analysis")
-        trend = alt.Chart(df).mark_line(opacity=0.3).encode(
-            x='Part_ID:Q',
-            y='Inferred_Time:Q',
-            color='Station_ID:N'
-        ).properties(height=300)
-        st.altair_chart(trend, use_container_width=True)
-        
-        st.subheader("Sensor Coverage & Confidence")
-        coverage = df.groupby('Coverage')['Station_ID'].nunique().reset_index()
-        st.dataframe(coverage)
-        
-        savings = int(rework_risks * 1500)
-        st.info(f"Financial Impact: Flagging {int(rework_risks)} at-risk events early helps mitigate an estimated ${savings} in downstream rework costs.")
-        
-    except Exception as e:
-        st.error(f"Error loading UI: {e}")
+ACCENT = "#A100FF"
+
+
+def _trend_svg(df):
+    trend = df.groupby("Part_ID")["Inferred_Time"].mean().tail(30)
+    values = trend.tolist()
+    minimum = min(values)
+    maximum = max(values)
+    spread = maximum - minimum or 1
+    points = []
+    for index, value in enumerate(values):
+        x = 42 + index * (530 / max(len(values) - 1, 1))
+        y = 176 - ((value - minimum) / spread) * 132
+        points.append(f"{x:.1f},{y:.1f}")
+    labels = []
+    for index in (0, len(values) // 2, len(values) - 1):
+        if values:
+            x = 42 + index * (530 / max(len(values) - 1, 1))
+            labels.append(
+                f'<text x="{x:.1f}" y="205" text-anchor="middle">{trend.index[index]}</text>'
+            )
+    return (
+        '<svg viewBox="0 0 610 225" role="img" aria-label="Historical average cycle time trend">'
+        '<g class="lt-svg-grid"><line x1="42" y1="44" x2="572" y2="44" />'
+        '<line x1="42" y1="110" x2="572" y2="110" /><line x1="42" y1="176" x2="572" y2="176" /></g>'
+        f'<polyline class="lt-svg-line" points="{" ".join(points)}" />'
+        + "".join(f'<circle class="lt-svg-point" cx="{point.split(",")[0]}" cy="{point.split(",")[1]}" r="3" />' for point in points)
+        + '<text x="8" y="48">high</text><text x="8" y="180">low</text>'
+        + "".join(labels)
+        + '</svg>'
+    )
+
+
+def _coverage_svg(stations):
+    counts = stations["Coverage"].value_counts()
+    live = int(counts.get("Instrumented", 0))
+    dark = int(counts.get("Dark", 0))
+    total = max(live + dark, 1)
+    live_ratio = live / total
+    circumference = 2 * 3.14159265359 * 54
+    live_arc = circumference * live_ratio
+    dark_arc = circumference - live_arc
+    return (
+        '<svg viewBox="0 0 360 250" role="img" aria-label="Sensor coverage donut chart">'
+        '<g transform="rotate(-90 180 105)">'
+        '<circle class="lt-svg-track" cx="180" cy="105" r="54" fill="none" stroke-width="22" />'
+        f'<circle class="lt-svg-fill" cx="180" cy="105" r="54" fill="none" stroke-width="22" stroke-dasharray="{live_arc:.1f} {circumference:.1f}" />'
+        f'<circle class="lt-svg-dark" cx="180" cy="105" r="54" fill="none" stroke-width="22" stroke-dasharray="{dark_arc:.1f} {circumference:.1f}" stroke-dashoffset="{-live_arc:.1f}" />'
+        '</g>'
+        f'<text class="lt-svg-center" x="180" y="101" text-anchor="middle">{round(live_ratio * 100)}%</text>'
+        '<text x="180" y="120" text-anchor="middle">LIVE COVERAGE</text>'
+        '<circle class="lt-svg-fill" cx="82" cy="190" r="5" />'
+        f'<text x="95" y="194">Instrumented {live}</text>'
+        '<circle class="lt-svg-dark" cx="220" cy="190" r="5" />'
+        f'<text x="233" y="194">Dark {dark}</text>'
+        '</svg>'
+    )
+
+
+def show(df):
+    st.markdown("### Plant Manager — ROI Dashboard")
+    st.caption("Line-wide throughput, prevented bottlenecks, and estimated savings.")
+
+    total_parts = int(df["Part_ID"].nunique())
+    avg_cycle = df["Inferred_Time"].mean()
+    bottlenecks_prevented = int(df["Risk_Score"].sum())
+    savings = bottlenecks_prevented * 1500
+
+    stations = df.drop_duplicates("Station_ID")
+    dark_count = int((stations["Coverage"] == "Dark").sum())
+    coverage_pct = round(100 * (1 - dark_count / len(stations)))
+
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        components.kpi_card("Total throughput", f"{total_parts} parts", description="Unique parts processed across the line")
+    with c2:
+        components.kpi_card("Avg cycle time", f"{avg_cycle:.2f} min", description="Mean time to complete one station cycle")
+    with c3:
+        components.kpi_card("Bottlenecks prevented", bottlenecks_prevented, tone="ok", description="Predicted slowdowns flagged before escalation")
+    with c4:
+        components.kpi_card("Est. savings", f"${savings:,}", tone="ok", description="Avoided rework cost from prevented bottlenecks")
+
+    st.write("")
+    left, right = st.columns([2, 1])
+
+    with left:
+        st.markdown("#### Historical Cycle-Time Trend")
+        st.markdown(f'<div class="lt-chart">{_trend_svg(df)}</div>', unsafe_allow_html=True)
+
+    with right:
+        st.markdown("#### Sensor Coverage")
+        components.kpi_card("Live coverage", f"{coverage_pct}%", tone="warn" if coverage_pct < 100 else "ok", description="Stations reporting directly from live sensors")
+        st.write("")
+        st.markdown(f'<div class="lt-chart">{_coverage_svg(stations)}</div>', unsafe_allow_html=True)
+
+    st.write("")
+    st.info(
+        f"💰 **Financial impact** — preventing {bottlenecks_prevented} predicted "
+        f"bottleneck{'s' if bottlenecks_prevented != 1 else ''} before they cascade "
+        f"avoids an estimated **${savings:,}** in downstream rework costs, based on "
+        f"the {dark_count} legacy stations LineTwin recovers visibility on."
+    )
