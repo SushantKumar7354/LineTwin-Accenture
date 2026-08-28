@@ -1,42 +1,72 @@
-import streamlit as st
-import pandas as pd
-import altair as alt
+"""Floor Supervisor — real-time operations view.
 
-def show():
-    st.header("Real-Time Operations")
-    
-    try:
-        df = pd.read_csv("predictions.csv")
-        
-        latest_part = df['Part_ID'].max()
-        curr_state = df[df['Part_ID'] == latest_part]
-        
-        risks = curr_state[curr_state['Risk_Score'] == 1]
-        
-        if not risks.empty:
-            st.error("ACTION REQUIRED: Downstream Ripple Detected")
-            for _, row in risks.iterrows():
-                st.warning(f"Prescription: Throttle {row['Station_ID']} speed by 5%. Predicted cycle {row['Predicted_Time']}m exceeds normal {round(row['Rolling_Avg'], 2)}m.")
-        else:
-            st.success("Line running optimally.")
-        
-        col1, col2 = st.columns([2, 1])
-        
-        with col1:
-            chart = alt.Chart(curr_state).mark_rect().encode(
-                x='Station_ID:O',
-                color=alt.condition(
-                    alt.datum.Risk_Score == 1,
-                    alt.value('red'),
-                    alt.value('green')
-                ),
-                tooltip=['Station_ID', 'Inferred_Time', 'Predicted_Time']
-            ).properties(height=200)
-            st.altair_chart(chart, use_container_width=True)
-        
-        with col2:
-            st.dataframe(curr_state[['Station_ID', 'Inferred_Time', 'Risk_Score']].reset_index(drop=True))
-            
-    except:
-        st.write("run data pipeline first")
-        
+Leads with prescriptive alerts, then the same conveyor strip filtered
+to the current moment, then a station-by-station detail table that
+distinguishes live readings from soft-sensor inferred ones.
+"""
+import streamlit as st
+
+from src.app.utils import latest_snapshot
+from src.app import components
+
+
+def show(df):
+    st.markdown("### Floor Supervisor — Real-Time Operations")
+    st.caption("Current line state and recommended actions for active risks.")
+
+    snap = latest_snapshot(df)
+    risks = snap[snap["Risk_Score"] == 1]
+
+    if not risks.empty:
+        for _, row in risks.iterrows():
+            predicted = row.get("Predicted_Time")
+            rolling = row.get("Rolling_Avg")
+            predicted_txt = f"{predicted:.2f}m" if predicted is not None else "–"
+            rolling_txt = f"{rolling:.2f}m" if rolling is not None else "–"
+            st.markdown(
+                f"""
+                <div class="lt-alert">
+                    <div class="lt-alert-title">Action required &mdash; {row['Station_ID']}</div>
+                    <div class="lt-presc">
+                        Throttle {row['Station_ID']} speed by 5%. Predicted cycle time
+                        {predicted_txt} exceeds its rolling average of {rolling_txt}.
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    else:
+        st.markdown(
+            '<div class="lt-ok">&check; Line running optimally &mdash; no interventions '
+            "needed right now.</div>",
+            unsafe_allow_html=True,
+        )
+
+    st.write("")
+    components.render_conveyor(snap)
+    components.render_legend()
+
+    st.write("")
+    st.markdown("#### Station Detail")
+
+    detail = snap[
+        ["Station_ID", "Coverage", "Inferred_Time", "Predicted_Time", "Risk_Score"]
+    ].reset_index(drop=True)
+    detail["Source"] = detail["Coverage"].map(
+        {"Instrumented": "Live", "Dark": "Inferred"}
+    )
+    detail["Status"] = detail["Risk_Score"].map({1: "At risk", 0: "Normal"})
+    detail = detail.rename(
+        columns={
+            "Station_ID": "Station",
+            "Inferred_Time": "Cycle time (min)",
+            "Predicted_Time": "Predicted next (min)",
+        }
+    ).drop(columns=["Coverage", "Risk_Score"])
+
+    st.markdown(
+        '<div class="lt-detail-table">'
+        + detail.to_html(index=False, border=0, classes="lt-detail-table", float_format="{:.2f}".format)
+        + '</div>',
+        unsafe_allow_html=True,
+    )
