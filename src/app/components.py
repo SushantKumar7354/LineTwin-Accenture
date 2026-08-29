@@ -39,7 +39,7 @@ def render_legend():
         """
         <div class="lt-legend">
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch" style="background:var(--lt-accent);"></span>
+                <span class="lt-legend-swatch" style="background:var(--lt-accent);border-radius:50%;"></span>
                 Instrumented (live sensor)
             </div>
             <div class="lt-legend-item">
