@@ -16,7 +16,10 @@ CSS = """
     --lt-muted: rgba(243,240,247,0.66);
 }
 
-.stApp { background: var(--lt-bg); color: var(--lt-text); font-family: 'Courier New', Courier, monospace; }
+.stApp { background: var(--lt-bg); color: var(--lt-text); font-family: 'Courier New', Courier, monospace !important; }
+.stApp button, .stApp label, .stApp [data-testid="stWidgetLabel"] p {
+    font-family: 'Courier New', Courier, monospace !important;
+}
 section[data-testid="stSidebar"] { background: var(--lt-panel); border-right: 1px solid var(--lt-accent-30); }
 section[data-testid="stSidebar"] * { color: var(--lt-text) !important; font-family: 'Courier New', Courier, monospace; }
 button[data-testid="stSidebarCollapseButton"],
@@ -29,11 +32,23 @@ section[data-testid="stSidebar"] button {
 }
 section[data-testid="stSidebar"] button:hover { background: #B52BFF !important; }
 
-h1, h2, h3, h4 {
-    font-family: 'EB Garamond', serif;
-    font-weight: 700;
-    letter-spacing: 0;
-    color: var(--lt-accent);
+h1, h2, h3, h4,
+[data-testid="stMarkdownContainer"] h1,
+[data-testid="stMarkdownContainer"] h2,
+[data-testid="stMarkdownContainer"] h3,
+[data-testid="stMarkdownContainer"] h4,
+[data-testid="stHeading"] h1,
+[data-testid="stHeading"] h2,
+[data-testid="stHeading"] h3,
+[data-testid="stHeading"] h4,
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3,
+section[data-testid="stSidebar"] h4 {
+    font-family: 'EB Garamond', serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    color: var(--lt-accent) !important;
 }
 p, li, span, label, div, caption { font-family: 'Courier New', Courier, monospace; }
 
