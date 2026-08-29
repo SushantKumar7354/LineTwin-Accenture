@@ -1,9 +1,3 @@
-"""Floor Supervisor — real-time operations view.
-
-Leads with prescriptive alerts, then the same conveyor strip filtered
-to the current moment, then a station-by-station detail table that
-distinguishes live readings from soft-sensor inferred ones.
-"""
 import streamlit as st
 
 from src.app.utils import latest_snapshot
@@ -23,12 +17,15 @@ def show(df):
             rolling = row.get("Rolling_Avg")
             predicted_txt = f"{predicted:.2f}m" if predicted is not None else "–"
             rolling_txt = f"{rolling:.2f}m" if rolling is not None else "–"
+            drift_severity = ((predicted - rolling) / rolling) * 100
+            recommended_throttle = min(15, max(2, int(drift_severity * 0.5)))
+            
             st.markdown(
                 f"""
                 <div class="lt-alert">
                     <div class="lt-alert-title">Action required &mdash; {row['Station_ID']}</div>
                     <div class="lt-presc">
-                        Throttle {row['Station_ID']} speed by 5%. Predicted cycle time
+                        Throttle {row['Station_ID']} speed by {recommended_throttle}%. Predicted cycle time
                         {predicted_txt} exceeds its rolling average of {rolling_txt}.
                     </div>
                 </div>
@@ -64,12 +61,9 @@ def show(df):
         }
     ).drop(columns=["Coverage", "Risk_Score"])
 
-    st.dataframe(
-        detail,
-        width='stretch',
-        hide_index=True,
-        column_config={
-            "Cycle time (min)": st.column_config.NumberColumn(format="%.2f"),
-            "Predicted next (min)": st.column_config.NumberColumn(format="%.2f"),
-        },
+    st.markdown(
+        '<div class="lt-detail-table">'
+        + detail.to_html(index=False, border=0, classes="lt-detail-table", float_format="{:.2f}".format)
+        + '</div>',
+        unsafe_allow_html=True,
     )

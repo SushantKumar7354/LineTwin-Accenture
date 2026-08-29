@@ -6,16 +6,15 @@ DATA_DIR = ROOT_DIR / "output_data"
 
 def infer_data(df):
     df['Timestamp'] = pd.to_datetime(df['Timestamp'])
-    # Sort chronologically by the physical part moving down the line
+    
     df = df.sort_values(['Part_ID', 'Station_Num']).reset_index(drop=True)
     
-    # Calculate explicit upstream buffer delta for the SAME part
+   
     df['Upstream_Departure_Time'] = df.groupby('Part_ID')['Timestamp'].shift(1)
     
     df['Inferred_Time'] = df['Cycle_Time']
     missing_mask = df['Inferred_Time'].isna()
     
-    # Fill dark stations using the buffer transit delta
     inferred_deltas = (df.loc[missing_mask, 'Timestamp'] - df.loc[missing_mask, 'Upstream_Departure_Time']).dt.total_seconds() / 60.0
     df.loc[missing_mask, 'Inferred_Time'] = inferred_deltas.round(2)
             

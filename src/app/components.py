@@ -1,6 +1,3 @@
-"""Reusable visual pieces shared across views: the conveyor-line
-'digital twin' strip and its legend.
-"""
 import streamlit as st
 
 from src.app.utils import station_sort_key
@@ -42,15 +39,15 @@ def render_legend():
         """
         <div class="lt-legend">
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch lt-legend-live"></span>
+                <span class="lt-legend-swatch" style="background:#2DD4BF;"></span>
                 Instrumented (live sensor)
             </div>
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch lt-legend-dark"></span>
+                <span class="lt-legend-swatch" style="background:#6B7280;"></span>
                 Dark data (soft-sensor inferred)
             </div>
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch lt-legend-risk"></span>
+                <span class="lt-legend-swatch" style="background:#EF4444;border-radius:50%;"></span>
                 Bottleneck risk detected
             </div>
         </div>
@@ -59,10 +56,16 @@ def render_legend():
     )
 
 
-def kpi_card(label: str, value, tone: str = ""):
+def kpi_card(label: str, value, tone: str = "", description: str = ""):
     tone_class = f" {tone}" if tone else ""
+    label_color = "rgba(255,255,255,0.82)" if tone == "risk" else "#4A4650"
+    description_color = "rgba(255,255,255,0.78)" if tone == "risk" else "#6B6670"
+    description_html = (
+        f'<div class="lt-kpi-description" style="color:{description_color};">{description}</div>'
+        if description else ""
+    )
     st.markdown(
-        f'<div class="lt-kpi"><div class="lt-kpi-label">{label}</div>'
-        f'<div class="lt-kpi-value{tone_class}">{value}</div></div>',
+        f'<div class="lt-kpi"><div class="lt-kpi-label" style="color:{label_color};">{label}</div>'
+        f'<div class="lt-kpi-value{tone_class}">{value}</div>{description_html}</div>',
         unsafe_allow_html=True,
     )
