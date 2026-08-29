@@ -42,15 +42,15 @@ def render_legend():
         """
         <div class="lt-legend">
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch" style="background:#2DD4BF;"></span>
+                <span class="lt-legend-swatch lt-legend-live"></span>
                 Instrumented (live sensor)
             </div>
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch" style="background:#6B7280;"></span>
+                <span class="lt-legend-swatch lt-legend-dark"></span>
                 Dark data (soft-sensor inferred)
             </div>
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch" style="background:#EF4444;border-radius:50%;"></span>
+                <span class="lt-legend-swatch lt-legend-risk"></span>
                 Bottleneck risk detected
             </div>
         </div>
@@ -59,16 +59,10 @@ def render_legend():
     )
 
 
-def kpi_card(label: str, value, tone: str = "", description: str = ""):
+def kpi_card(label: str, value, tone: str = ""):
     tone_class = f" {tone}" if tone else ""
-    label_color = "rgba(255,255,255,0.82)" if tone == "risk" else "#4A4650"
-    description_color = "rgba(255,255,255,0.78)" if tone == "risk" else "#6B6670"
-    description_html = (
-        f'<div class="lt-kpi-description" style="color:{description_color};">{description}</div>'
-        if description else ""
-    )
     st.markdown(
-        f'<div class="lt-kpi"><div class="lt-kpi-label" style="color:{label_color};">{label}</div>'
-        f'<div class="lt-kpi-value{tone_class}">{value}</div>{description_html}</div>',
+        f'<div class="lt-kpi"><div class="lt-kpi-label">{label}</div>'
+        f'<div class="lt-kpi-value{tone_class}">{value}</div></div>',
         unsafe_allow_html=True,
     )

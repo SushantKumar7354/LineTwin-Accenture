@@ -1,7 +1,0 @@
-pandas
-numpy
-networkx
-scikit-learn
-streamlit
-altair
-matplotlib

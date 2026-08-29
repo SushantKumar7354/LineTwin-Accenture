@@ -24,15 +24,14 @@ def show(df):
 
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        components.kpi_card("Stations on line", total_stations, description="Total stations being monitored")
+        components.kpi_card("Stations on line", total_stations)
     with c2:
-        components.kpi_card("Live sensor coverage", live_count, tone="ok", description="Stations with direct sensor readings")
+        components.kpi_card("Live sensor coverage", live_count, tone="ok")
     with c3:
-        components.kpi_card("Dark data (inferred)", dark_count, tone="warn", description="Stations estimated by the soft sensor")
+        components.kpi_card("Dark data (inferred)", dark_count, tone="warn")
     with c4:
         components.kpi_card(
-            "Active risk alerts", risk_count, tone="risk" if risk_count else "ok",
-            description="Stations currently predicted to bottleneck",
+            "Active risk alerts", risk_count, tone="risk" if risk_count else "ok"
         )
 
     st.write("")
