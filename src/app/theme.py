@@ -189,6 +189,10 @@ hr, div[data-testid="stDivider"] { border-color: var(--lt-accent-30) !important;
 .lt-chart svg text { fill: var(--lt-muted); font: 11px 'Courier New', Courier, monospace; }
 .lt-svg-track { fill: var(--lt-accent-15); stroke: var(--lt-accent-15); }
 .lt-svg-track, .lt-svg-fill, .lt-svg-dark { stroke-linecap: round; }
+.lt-svg-axis { stroke: var(--lt-accent-30); stroke-width: 1; }
+.lt-svg-axis-title { fill: var(--lt-muted); font: 10px 'Courier New', Courier, monospace; text-transform: uppercase; letter-spacing: 0.04em; }
+.lt-svg-peak { fill: var(--lt-accent); }
+.lt-svg-peak-label { fill: var(--lt-text); font: 11px 'Courier New', Courier, monospace; font-weight: 700; }
 .lt-svg-fill { fill: var(--lt-accent); stroke: var(--lt-accent); }
 .lt-svg-dark { fill: var(--lt-panel); stroke: var(--lt-white); }
 .lt-svg-center { fill: var(--lt-accent) !important; font-size: 24px !important; font-weight: 700; }
