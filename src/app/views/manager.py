@@ -1,7 +1,7 @@
 """Plant Manager — ROI dashboard.
 
 Executive-facing: throughput, OEE-proxy cycle time, bottlenecks
-prevented, sensor coverage, and the financial-impact case.
+predicted, sensor coverage, and the financial-impact case.
 """
 import streamlit as st
 
@@ -68,12 +68,12 @@ def _coverage_svg(stations):
 
 def show(df):
     st.markdown("### Plant Manager — ROI Dashboard")
-    st.caption("Line-wide throughput, prevented bottlenecks, and estimated savings.")
+    st.caption("Line-wide throughput, predicted bottlenecks, and estimated savings.")
 
     total_parts = int(df["Part_ID"].nunique())
     avg_cycle = df["Inferred_Time"].mean()
-    bottlenecks_prevented = int(df["Risk_Score"].sum())
-    savings = bottlenecks_prevented * 1500
+    predicted_bottlenecks = int(df["Risk_Score"].sum())
+    savings = predicted_bottlenecks * 1500
 
     stations = df.drop_duplicates("Station_ID")
     dark_count = int((stations["Coverage"] == "Dark").sum())
@@ -85,9 +85,9 @@ def show(df):
     with c2:
         components.kpi_card("Avg cycle time", f"{avg_cycle:.2f} min", description="Mean time to complete one station cycle")
     with c3:
-        components.kpi_card("Bottlenecks prevented", bottlenecks_prevented, tone="ok", description="Predicted slowdowns flagged before escalation")
+        components.kpi_card("Predicted bottlenecks", predicted_bottlenecks, tone="ok", description="Predicted slowdowns flagged before escalation")
     with c4:
-        components.kpi_card("Est. savings", f"${savings:,}", tone="ok", description="Avoided rework cost from prevented bottlenecks")
+        components.kpi_card("Est. savings", f"${savings:,}", tone="ok", description="Avoided rework cost from predicted bottlenecks")
 
     st.write("")
     left, right = st.columns([2, 1])
@@ -104,8 +104,8 @@ def show(df):
 
     st.write("")
     st.info(
-        f"💰 **Financial impact** — preventing {bottlenecks_prevented} predicted "
-        f"bottleneck{'s' if bottlenecks_prevented != 1 else ''} before they cascade "
-        f"avoids an estimated **${savings:,}** in downstream rework costs, based on "
+        f"💰 **Financial impact** — flagging {predicted_bottlenecks} predicted "
+        f"bottleneck{'s' if predicted_bottlenecks != 1 else ''} early "
+        f"mitigates an estimated **${savings:,}** in downstream rework costs, based on "
         f"the {dark_count} legacy stations LineTwin recovers visibility on."
     )
