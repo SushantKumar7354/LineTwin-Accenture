@@ -16,13 +16,13 @@ def generate_baseline(num_stations=35, num_parts=200):
         current_time = start_time + timedelta(minutes=part_index * 2)
         for station_index in range(1, num_stations + 1):
             
-            # Add realistic physical variations based on factory zones
+           
             if station_index <= 12:
-                base_cycle = 2.0 # Body Shop
+                base_cycle = 2.0 
             elif station_index <= 24:
-                base_cycle = 4.5 # Paint Shop
+                base_cycle = 4.5 
             else:
-                base_cycle = 3.0 # Final Assembly
+                base_cycle = 3.0 
                 
             cycle_time = base_cycle + random.gauss(0, base_cycle * 0.05)
             current_time += timedelta(minutes=cycle_time)
@@ -33,7 +33,7 @@ def generate_baseline(num_stations=35, num_parts=200):
             
             simulation_results.append({
                 "Part_ID": part_index,
-                "Station_Num": station_index, # Added integer for easier sorting
+                "Station_Num": station_index,
                 "Station_ID": f"ST-{station_index}",
                 "Timestamp": current_time,
                 "Cycle_Time": recorded_time,
