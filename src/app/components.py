@@ -39,15 +39,15 @@ def render_legend():
         """
         <div class="lt-legend">
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch" style="background:#2DD4BF;"></span>
+                <span class="lt-legend-swatch" style="background:var(--lt-accent);"></span>
                 Instrumented (live sensor)
             </div>
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch" style="background:#6B7280;"></span>
+                <span class="lt-legend-swatch" style="background:var(--lt-white);border:1px solid var(--lt-accent);"></span>
                 Dark data (soft-sensor inferred)
             </div>
             <div class="lt-legend-item">
-                <span class="lt-legend-swatch" style="background:#EF4444;border-radius:50%;"></span>
+                <span class="lt-legend-swatch" style="background:var(--lt-accent);border-radius:50%;"></span>
                 Bottleneck risk detected
             </div>
         </div>
