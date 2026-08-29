@@ -4,31 +4,65 @@ from src.app import components
 ACCENT = "#A100FF"
 
 def _trend_svg(df):
-    trend = df.groupby("Part_ID")["Inferred_Time"].mean().tail(30)
+    trend = df.groupby("Part_ID")["Inferred_Time"].mean()
     values = trend.tolist()
+    parts = trend.index.tolist()
+    if not values:
+        return '<svg viewBox="0 0 610 225" role="img"></svg>'
+
     minimum = min(values)
     maximum = max(values)
     spread = maximum - minimum or 1
-    points = []
-    for index, value in enumerate(values):
-        x = 42 + index * (530 / max(len(values) - 1, 1))
-        y = 176 - ((value - minimum) / spread) * 132
-        points.append(f"{x:.1f},{y:.1f}")
-    labels = []
-    for index in (0, len(values) // 2, len(values) - 1):
-        if values:
-            x = 42 + index * (530 / max(len(values) - 1, 1))
-            labels.append(
-                f'<text x="{x:.1f}" y="205" text-anchor="middle">{trend.index[index]}</text>'
-            )
+    pad = spread * 0.18
+    y_min = minimum - pad
+    y_max = maximum + pad
+    y_spread = y_max - y_min or 1
+
+    plot_left, plot_right = 46, 572
+    plot_top, plot_bottom = 20, 176
+    n = len(values)
+
+    def x_at(i):
+        return plot_left + i * ((plot_right - plot_left) / max(n - 1, 1))
+
+    def y_at(v):
+        return plot_bottom - ((v - y_min) / y_spread) * (plot_bottom - plot_top)
+
+    points = [f"{x_at(i):.1f},{y_at(v):.1f}" for i, v in enumerate(values)]
+
+    grid_lines, y_labels = [], []
+    y_ticks = 4
+    for t in range(y_ticks + 1):
+        frac = t / y_ticks
+        val = y_min + frac * y_spread
+        y = plot_bottom - frac * (plot_bottom - plot_top)
+        grid_lines.append(f'<line x1="{plot_left}" y1="{y:.1f}" x2="{plot_right}" y2="{y:.1f}" />')
+        y_labels.append(f'<text x="{plot_left - 8}" y="{y + 4:.1f}" text-anchor="end">{val:.1f}</text>')
+
+    x_labels = []
+    x_ticks = 4
+    for t in range(x_ticks + 1):
+        frac = t / x_ticks
+        idx = round(frac * (n - 1))
+        x = x_at(idx)
+        x_labels.append(f'<text x="{x:.1f}" y="{plot_bottom + 20}" text-anchor="middle">{parts[idx]}</text>')
+
+    peak_idx = values.index(maximum)
+    peak_x, peak_y = x_at(peak_idx), y_at(maximum)
+
     return (
         '<svg viewBox="0 0 610 225" role="img" aria-label="Historical average cycle time trend">'
-        '<g class="lt-svg-grid"><line x1="42" y1="44" x2="572" y2="44" />'
-        '<line x1="42" y1="110" x2="572" y2="110" /><line x1="42" y1="176" x2="572" y2="176" /></g>'
+        f'<g class="lt-svg-grid">{"".join(grid_lines)}</g>'
+        f'<line x1="{plot_left}" y1="{plot_top}" x2="{plot_left}" y2="{plot_bottom}" class="lt-svg-axis" />'
+        f'<line x1="{plot_left}" y1="{plot_bottom}" x2="{plot_right}" y2="{plot_bottom}" class="lt-svg-axis" />'
         f'<polyline class="lt-svg-line" points="{" ".join(points)}" />'
-        + "".join(f'<circle class="lt-svg-point" cx="{point.split(",")[0]}" cy="{point.split(",")[1]}" r="3" />' for point in points)
-        + '<text x="8" y="48">high</text><text x="8" y="180">low</text>'
-        + "".join(labels)
+        + "".join(f'<circle class="lt-svg-point" cx="{point.split(",")[0]}" cy="{point.split(",")[1]}" r="2.5" />' for point in points)
+        + f'<circle class="lt-svg-peak" cx="{peak_x:.1f}" cy="{peak_y:.1f}" r="4" />'
+        + f'<text class="lt-svg-peak-label" x="{peak_x:.1f}" y="{max(peak_y - 10, 12):.1f}" text-anchor="middle">{maximum:.2f}m</text>'
+        + "".join(y_labels)
+        + "".join(x_labels)
+        + '<text x="8" y="14" class="lt-svg-axis-title">min</text>'
+        + f'<text x="{(plot_left + plot_right) / 2:.1f}" y="218" text-anchor="middle" class="lt-svg-axis-title">Part ID</text>'
         + '</svg>'
     )
 
@@ -51,9 +85,9 @@ def _coverage_svg(stations):
         f'<text class="lt-svg-center" x="180" y="101" text-anchor="middle">{round(live_ratio * 100)}%</text>'
         '<text x="180" y="120" text-anchor="middle">LIVE COVERAGE</text>'
         '<circle class="lt-svg-fill" cx="82" cy="190" r="5" />'
-        f'<text x="95" y="194">Instrumented {live}</text>'
+        f'<text x="95" y="194">Instrumented &mdash; {live}</text>'
         '<circle class="lt-svg-dark" cx="220" cy="190" r="5" />'
-        f'<text x="233" y="194">Dark {dark}</text>'
+        f'<text x="233" y="194">Dark &mdash; {dark}</text>'
         '</svg>'
     )
 
