@@ -50,7 +50,10 @@ def show(df):
         ["Station_ID", "Coverage", "Inferred_Time", "Predicted_Time", "Risk_Score"]
     ].reset_index(drop=True)
     detail["Source"] = detail["Coverage"].map(
-        {"Instrumented": "Live", "Dark": "Inferred"}
+        {
+            "Instrumented": '<span class="lt-badge lt-badge-live">LIVE</span>',
+            "Dark": '<span class="lt-badge lt-badge-inferred">INFERRED</span>',
+        }
     )
     detail["Status"] = detail["Risk_Score"].map({1: "At risk", 0: "Normal"})
     detail = detail.rename(
@@ -63,7 +66,7 @@ def show(df):
 
     st.markdown(
         '<div class="lt-detail-table">'
-        + detail.to_html(index=False, border=0, classes="lt-detail-table", float_format="{:.2f}".format)
+        + detail.to_html(index=False, border=0, classes="lt-detail-table", float_format="{:.2f}".format, escape=False)
         + '</div>',
         unsafe_allow_html=True,
     )
