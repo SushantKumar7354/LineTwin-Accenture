@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏭 LineTwin
+# LineTwin
 ### A Spatiotemporal Digital Twin for Assembly Lines
 
 **Turning hidden factory blind spots into foresight — before defects happen.**
@@ -13,7 +13,7 @@
 **Accenture Innovation Challenge 2026 — Round 2** · Track: *AI Reinvention Made Real*
 **Team NinjaCoder** — Meet Kumar Gupta & Sushant Kumar, IIT Patna
 
-[🎬 Watch the 3-Minute Demo Video](https://drive.google.com/file/d/17vJB6JF5hcJOp2adi3lZwweLatvdL-Fz/view?usp=sharing) · [📄 Business Proposal](docs/Business_Proposal.md)
+[ Watch the 3-Minute Demo Video](https://drive.google.com/file/d/17vJB6JF5hcJOp2adi3lZwweLatvdL-Fz/view?usp=sharing) · [📄 Business Proposal](docs/Business_Proposal.md)
 
 </div>
 
@@ -39,13 +39,13 @@ LineTwin models the assembly line as a connected, time-aware system instead of a
 
 `[ Plant Simulator ] ➔ [ Anomaly Injector ] ➔ [ Soft-Sensor Inference ] ➔ [ Predictive Model ] ➔ [ Multi-Persona Dashboard ]`
 
-## 📖 Core Architecture
+##  Core Architecture
 1. **Sense & Infer** — Physical sensor readings are merged with soft-sensor inferred times for legacy "dark" stations using upstream-to-station temporal deltas.
 2. **Model the Line** — A gradient-boosted model learns the spatiotemporal topology of the assembly line.
 3. **Predict the Ripple** — LineTwin flags exactly when and where an upstream delay will bottleneck downstream stations on the next 5 units.
 4. **Prescribe Action** — Supervisors get a plain-language action (e.g., "Throttle speed by 5%") instead of a passive alarm.
 
-## 📊 Validated Results
+##  Validated Results
 The prototype simulates a 35-station line and injects a physical delay shockwave at ST-8. The ML pipeline successfully tracks the decaying ripple effect across both instrumented and inferred stations:
 
 | Station | Coverage | Baseline Cycle Time | During Anomaly |
@@ -58,16 +58,16 @@ The prototype simulates a 35-station line and injects a physical delay shockwave
 
 *The delay decays as it travels downstream and is successfully inferred across the dark stations (ST-10, ST-11).*
 
-## 👥 Multi-Persona Dashboard
+##  Multi-Persona Dashboard
 One dataset, three views, tailored to who's looking at the screen:
 * **Digital Twin Overview** — line-wide topology and live sensor coverage stats.
 * **Floor Supervisor** — real-time alerts, prescriptive actions, and current line state.
 * **Plant Manager** — trend lines, sensor coverage ROI, and financial impact.
 
-## 🛠️ Tech Stack
+##  Tech Stack
 `Python` · `Streamlit` · `pandas` · `scikit-learn (Gradient Boosting)` · `networkx`
 
-## 📂 Repository Structure
+##  Repository Structure
 ```text
 LineTwin-Accenture/
 ├── src/
