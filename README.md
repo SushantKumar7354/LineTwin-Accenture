@@ -69,7 +69,7 @@ One dataset, three views, tailored to who's looking at the screen:
 
 ##  Repository Structure
 ```text
-LineTwin-Accenture/
+LineTwin_NinjaCoder/
 ├── src/
 │   ├── data/
 │   │   ├── simulator.py       # Synthetic 35-station plant data generator
