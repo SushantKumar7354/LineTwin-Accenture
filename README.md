@@ -1,6 +1,6 @@
 <div align="center">
 
-# LineTwin
+# #LineTwin#
 ### A Spatiotemporal Digital Twin for Assembly Lines
 
 **Turning hidden factory blind spots into foresight — before defects happen.**
