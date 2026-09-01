@@ -13,7 +13,7 @@
 **Accenture Innovation Challenge 2026 — Round 2** · Track: *AI Reinvention Made Real*
 **Team NinjaCoder** — Meet Kumar Gupta & Sushant Kumar, IIT Patna
 
-[ Watch the 3-Minute Demo Video](https://drive.google.com/file/d/17vJB6JF5hcJOp2adi3lZwweLatvdL-Fz/view?usp=sharing) · [📄 Business Proposal](docs/Business_Proposal.md)
+[ Watch the 6-Minute Demo Video](https://drive.google.com/file/d/17vJB6JF5hcJOp2adi3lZwweLatvdL-Fz/view?usp=sharing) · [📄 Business Proposal](docs/Business_Proposal.md)
 
 </div>
 
