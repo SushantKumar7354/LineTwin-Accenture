@@ -1,3 +1,5 @@
+import math
+
 import streamlit as st
 
 from src.app.utils import station_sort_key
@@ -22,7 +24,10 @@ def render_conveyor(snapshot_df):
         dark = " dark" if row.get("Coverage") == "Dark" else ""
         num = str(row["Station_ID"]).split("-")[-1]
         inferred_time = row.get("Inferred_Time")
-        time_txt = f"{inferred_time:.2f}m" if inferred_time is not None else "–"
+        has_time = inferred_time is not None and not (
+            isinstance(inferred_time, float) and math.isnan(inferred_time)
+        )
+        time_txt = f"{inferred_time:.2f}m" if has_time else "–"
         tooltip = f"{row['Station_ID']} · {row.get('Coverage', '–')} · {time_txt} cycle"
         html.append(
             f'<div class="lt-station{risk}{dark}" title="{tooltip}">{num}'

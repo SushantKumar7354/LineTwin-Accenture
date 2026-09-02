@@ -5,7 +5,6 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = ROOT_DIR / "output_data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 def generate_baseline(num_stations=35, num_parts=200):
     random.seed(42)
@@ -44,6 +43,7 @@ def generate_baseline(num_stations=35, num_parts=200):
 
 if __name__ == "__main__":
     try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
         df_baseline = generate_baseline()
         out_path = DATA_DIR / "baseline.csv"
         df_baseline.to_csv(out_path, index=False)

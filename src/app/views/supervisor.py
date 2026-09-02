@@ -1,7 +1,13 @@
+import math
+
 import streamlit as st
 
 from src.app.utils import latest_snapshot
 from src.app import components
+
+
+def _is_valid_number(value):
+    return value is not None and not (isinstance(value, float) and math.isnan(value))
 
 
 def show(df):
@@ -14,19 +20,31 @@ def show(df):
     if not risks.empty:
         for _, row in risks.iterrows():
             predicted = row.get("Predicted_Time")
-            rolling = row.get("Rolling_Avg")
-            predicted_txt = f"{predicted:.2f}m" if predicted is not None else "–"
-            rolling_txt = f"{rolling:.2f}m" if rolling is not None else "–"
-            drift_severity = ((predicted - rolling) / rolling) * 100
-            recommended_throttle = min(15, max(2, int(drift_severity * 0.5)))
-            
+            # Risk_Score is computed against Baseline_Time (predictor.py), not
+            # Rolling_Avg — Rolling_Avg drifts upward during a sustained
+            # anomaly and can end up *higher* than Predicted_Time, which would
+            # make an "exceeds the rolling average" message read backwards.
+            # Baseline_Time is the stable pre-anomaly reference and is what
+            # actually triggered this alert, so that's what we show.
+            baseline = row.get("Baseline_Time")
+            has_valid_numbers = (
+                _is_valid_number(predicted) and _is_valid_number(baseline) and baseline != 0
+            )
+            predicted_txt = f"{predicted:.2f}m" if has_valid_numbers else "–"
+            baseline_txt = f"{baseline:.2f}m" if has_valid_numbers else "–"
+            if has_valid_numbers:
+                drift_severity = ((predicted - baseline) / baseline) * 100
+                recommended_throttle = min(15, max(2, int(drift_severity * 0.5)))
+            else:
+                recommended_throttle = 5
+
             st.markdown(
                 f"""
                 <div class="lt-alert">
                     <div class="lt-alert-title">Action required &mdash; {row['Station_ID']}</div>
                     <div class="lt-presc">
                         Throttle {row['Station_ID']} speed by {recommended_throttle}%. Predicted cycle time
-                        {predicted_txt} exceeds its rolling average of {rolling_txt}.
+                        {predicted_txt} exceeds its normal baseline of {baseline_txt}.
                     </div>
                 </div>
                 """,
