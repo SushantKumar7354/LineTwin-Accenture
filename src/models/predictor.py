@@ -73,9 +73,6 @@ def run_pred(df: pd.DataFrame) -> pd.DataFrame:
 
     df["Predicted_Time"] = np.round(model.predict(df[features]), 2)
 
-    # 6. Risk scoring against a STABLE per-station baseline (see module
-    #    docstring). Fall back to Rolling_Avg for any station with no data
-    #    in the settle window, so risk scoring never silently goes to zero.
     settled = df[df["Part_ID"] <= BASELINE_SETTLE_PARTS]
     baseline_by_station = settled.groupby("Station_ID")["Inferred_Time"].mean()
     df["Baseline_Time"] = df["Station_ID"].map(baseline_by_station)
