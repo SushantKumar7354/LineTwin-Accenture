@@ -1,9 +1,7 @@
 import math
-
 import streamlit as st
 
 from src.app.utils import station_sort_key
-
 
 def render_conveyor(snapshot_df):
     """Render the line as a horizontal strip of station nodes.

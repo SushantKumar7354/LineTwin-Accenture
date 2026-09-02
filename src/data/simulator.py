@@ -9,8 +9,7 @@ DATA_DIR = ROOT_DIR / "output_data"
 def generate_baseline(num_stations=35, num_parts=200):
     random.seed(42)
     simulation_results = []
-    start_time = datetime(2026, 9, 1, 8, 0, 0)
-    
+    start_time = datetime(2026, 9, 1, 8, 0, 0)  
     for part_index in range(1, num_parts + 1):
         current_time = start_time + timedelta(minutes=part_index * 2)
         for station_index in range(1, num_stations + 1):
@@ -29,7 +28,6 @@ def generate_baseline(num_stations=35, num_parts=200):
             is_legacy = (10 <= station_index <= 15) or (25 <= station_index <= 30)
             recorded_time = None if is_legacy else round(cycle_time, 2)
             coverage_type = "Dark" if is_legacy else "Instrumented"
-            
             simulation_results.append({
                 "Part_ID": part_index,
                 "Station_Num": station_index,

@@ -1,14 +1,11 @@
 import math
-
 import streamlit as st
 
 from src.app.utils import latest_snapshot
 from src.app import components
 
-
 def _is_valid_number(value):
     return value is not None and not (isinstance(value, float) and math.isnan(value))
-
 
 def show(df):
     st.markdown("### Floor Supervisor — Real-Time Operations")
